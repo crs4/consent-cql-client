@@ -1,24 +1,38 @@
 import base64
+import json
 import secrets
 import uuid
-from datetime import datetime
-
 import requests
+import pprint
 
+from datetime import datetime
 from cql.models import Library, Population, Measure, EvaluationMeasure
-
 from aiohttp import web
+from enum import Enum
 
-fhir_base_url = "http://localhost:8089/fhir"
-fhir_specimen_url = f"{fhir_base_url}/Specimen"
-fhir_patient_url = f"{fhir_base_url}/Patient"
-fhir_organization_url = f"{fhir_base_url}/Organization"
-fhir_json_header = {"Content-type": "application/fhir+json"}
-max_items = 11000
-library_version = "0.1.1"
-measure_version = "0.1.1"
-evaluation_year_start = "1900"
-evaluation_year_end = "2100"
+
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format="%(levelname)s:%(message)s")
+
+
+class Granularity(Enum):
+    RESOURCES = "RESOURCES"
+    COUNT = "COUNT"
+
+
+FHIR_BASE_URL = "http://localhost:8089/fhir"
+FHIR_SPECIMEN_RESOURCE_URL = f"{FHIR_BASE_URL}/Specimen"
+FHIR_PATIENT_RESOURCE_URL = f"{FHIR_BASE_URL}/Patient"
+FHIR_ORGANIZATION_RESOURCE_URL = f"{FHIR_BASE_URL}/Organization"
+FHIR_REQUEST_HEADER = {"Content-type": "application/fhir+json"}
+MAX_RESULTS = 11000
+FHIR_LIBRARY_VERSION = "0.1.1"
+FHIR_MEASURE_YEAR_VERSION = "0.1.1"
+FHIR_MEASURE_EVALUATION_YEAR_START = "1900"
+FHIR_MEASURE_EVALUATION_YEAR_END = "2100"
+CQL_QUERY_CONTEXT = "Patient"  # This can be Specimen or  Patient
+CQL_QUERY_GRANULARITY = Granularity.RESOURCES  # it can be count or resources
 
 
 def encode(string):
@@ -37,157 +51,151 @@ def generate_id():
     return secrets.token_hex(8)
 
 
-def _perform_request(method, url, json=None, params=None):
+def perform_fhir_api_request(method, url, json=None, params=None):
     try:
         res = requests.request(
             method,
             url,
             json=json.get_resource() if json is not None else None,
             params=params if params is not None else None,
-            headers=fhir_json_header,
+            headers=FHIR_REQUEST_HEADER,
         )
     except requests.exceptions.ConnectionError:
         raise web.HTTPInternalServerError(reason="Error contacting data service")
 
-    print("Performing request to %s" % url)
+    logging.debug("Performing request to %s" % url)
     if res.status_code not in (200, 201):
-        print("Error performing the request. Returned code %s" % res.status_code)
+        logging.debug(
+            "Error performing the request. Returned code %s" % res.status_code
+        )
         raise Exception(res.json())
     return res.json()
 
 
-# specimens_query_by_consent = "library Retrieve\n" + \
-#                       "using FHIR version '4.0.0'\n" + \
-#                       "include FHIRHelpers version '4.0.0'\n\n" + \
-#                       "\n".join([f"codesystem {key}: '{value}'" for (key, value) in FHIR_CODE_SYSTEMS.items()]) + \
-#                       "\n\ncontext Specimen" + \
-#                       "\n\ndefine Patient:\n singleton from ([Patient])" + \
-#                       "\n\ndefine InInitialPopulation:\n" + \
-#                       "exists(from [Specimen] S where exists (from S.extension E where E.value.identifier.value = '{self.collection_id}')"
-# "exists(from [Patient] P where P.gender = 'female') "
-#                       "exists(from [Consent] C where exists(flatten(C.provision.provision) P where exists(P.data D where D.reference.reference = 'Specimen/' + S.id))) "
-
-# "exists(from [Specimen] S where S.type.coding contains Code 'blood-serum' from SampleMaterialType)"
-
-
-# specimens_query_by_consent = """
-# library ConsentQuery version '1.0.0'
-#
-# using FHIR version '4.0.1'
-#
-# context Patient
-#
-# define InInitialPopulation:
-#   exists([Consent])
-# """
-
-specimens_query_by_consent = """
-library ConsentSpecimenQuery version '1.0.0'
-
-using FHIR version '4.0.0'
-
-include FHIRHelpers version '4.0.0'
-
-context Unfiltered
-
-
-
-
-// Find all Consent resources where provision.provision.data references a Specimen and matches a specific provision.code
-define ConsentWithSpecimenReferences:
-  [Consent] C
-    where exists (
-      C.provision P
-        where exists (
-          P.provision Q
-            where Q.code.coding.system = 'https://fhir.bbmri.de/CodeSystem/common-condition-elements-cs'
-            and Q.code.coding.code = 'BIOBANKING'
-            and exists (
-              Q.data D
-            )
-    )
-    )
-
-// Extract the Specimen IDs referenced in the provisions of the Consent resources
-  define SpecimenIdsReferencedInConsent:
-  flatten(
-    [Consent] C
-          return flatten (
-            C.provision.provision Q
-              return flatten (
-                Q.data D
-                where Q.code.coding.system = 'https://fhir.bbmri.de/CodeSystem/common-condition-elements-cs'
-                and Q.code.coding.code = 'COMMERCIAL_USE'
-                  return Split(D.reference.reference, '/')[1]
-              )
+def create_cql_query(context: str, CCEs: list):
+    return f"""
+    library ConsentSpecimenQuery version '1.0.0'
+    using FHIR version '4.0.0'
+    include FHIRHelpers version '4.0.0'
+    context Unfiltered
+    
+    define SpecimenIdsReferencedInConsent:
+        flatten (
+            [Consent] C
+            return flatten (
+                C.provision.provision Q
+                return flatten (
+                    Q.data D
+                    where Q.code.coding.system = 'https://fhir.bbmri.de/CodeSystem/common-condition-elements-cs'
+                    and Q.code.coding.code in List<String>{{{','.join("'"+cce+"'" for cce in CCEs)}}}
+                    return Split(D.reference.reference, '/')[1]
+                    )
+                )
+        )
         
-      )
-      )
-   
-define testSpecimens:
-     List<String>{'urn-test-spec-AABJdynbLg'}
+    context {context}
+    
+   define InInitialPopulation:
+        exists (
+            from [Specimen] S
+            where S.id in SpecimenIdsReferencedInConsent
+        )
+    """
 
 
-// Now switch to the Specimen context and retrieve those Specimens
-context Specimen
+def create_library(base64_cql_query, url):
+    return Library(
+        version_id=FHIR_LIBRARY_VERSION,
+        last_updated=generate_creation_timestamp(),
+        data=base64_cql_query.decode("ascii"),
+        id=generate_id(),
+        url=url,
+    )
 
-define InInitialPopulation:
-  exists (from [Specimen] S
-    where S.id in SpecimenIdsReferencedInConsent)
 
-"""
+def create_measure(populations, url):
+    return Measure(
+        stratifiers=[],
+        populations=populations,
+        version_id=FHIR_MEASURE_YEAR_VERSION,
+        last_updated=generate_creation_timestamp(),
+        subject=CQL_QUERY_CONTEXT,
+        library_url=url,
+        id=generate_id(),
+    )
 
 
-base64_cql = encode(specimens_query_by_consent)
-library_url = generate_uuid()
-print("Creating Library")
-print(specimens_query_by_consent)
-library = Library(
-    version_id=library_version,
-    last_updated=generate_creation_timestamp(),
-    data=base64_cql.decode("ascii"),
-    id=generate_id(),
-    url=library_url,
-)
-l = _perform_request("POST", f"{fhir_base_url}/Library", library)
-print("Library created")
-populations = [Population(expression="InInitialPopulation", code="initial-population")]
-measure = Measure(
-    stratifiers=[],
-    populations=populations,
-    version_id=measure_version,
-    last_updated=generate_creation_timestamp(),
-    subject="Specimen",
-    library_url=library_url,
-    id=generate_id(),
-)
+def create_evaluation_measure(report_type):
+    return EvaluationMeasure(
+        period_start=FHIR_MEASURE_EVALUATION_YEAR_START,
+        period_end=FHIR_MEASURE_EVALUATION_YEAR_END,
+        report_type=report_type,
+    )
 
-print("Creating Measure")
-print(measure.get_resource())
-created_measure = _perform_request("POST", f"{fhir_base_url}/Measure", measure)
-print("Measure created")
-measure_id = created_measure["id"]
-report_type = EvaluationMeasure.SUBJECT_LIST
-evaluation_measure = EvaluationMeasure(
-    period_start=evaluation_year_start,
-    period_end=evaluation_year_end,
-    report_type=report_type,
-)
-print("Evaluating Measure")
-print(evaluation_measure.get_resource())
-evaluation_measure_results = _perform_request(
-    "POST",
-    f"{fhir_base_url}/Measure/{measure_id}/$evaluate-measure",
-    json=evaluation_measure,
-)
-print("Measure evaluated")
-print(evaluation_measure_results)
 
-num = evaluation_measure_results["group"][0]["population"][0]["count"]
-list_id = evaluation_measure_results["group"][0]["population"][0]["subjectResults"][
-    "reference"
-][5:]
-# get results from the measures list; at the moment it gets overall results
-params = {"_list": list_id, "_count": max_items}
-fhir_entries = _perform_request("GET", f"{fhir_base_url}/Specimen", params=params)
-print(fhir_entries)
+def perform_cql_query(cql_query: str, granularity: Granularity):
+    logging.debug(cql_query)
+    base64_cql = encode(cql_query)
+    logging.debug("Creating Library")
+    library_url = generate_uuid()
+    library = create_library(base64_cql, library_url)
+    logging.debug("POST Library")
+    l = perform_fhir_api_request("POST", f"{FHIR_BASE_URL}/Library", library)
+    logging.debug("Library created")
+    populations = [
+        Population(expression="InInitialPopulation", code="initial-population")
+    ]
+    measure = create_measure(populations, library_url)
+    logging.debug("Creating Measure")
+    logging.debug(measure.get_resource())
+    created_measure = perform_fhir_api_request(
+        "POST", f"{FHIR_BASE_URL}/Measure", measure
+    )
+    logging.debug("Measure created")
+    measure_id = created_measure["id"]
+    report_type = EvaluationMeasure.SUBJECT_LIST
+    evaluation_measure = create_evaluation_measure(report_type)
+    logging.debug("Evaluating Measure")
+    logging.debug(evaluation_measure.get_resource())
+    evaluation_measure_results = perform_fhir_api_request(
+        "POST",
+        f"{FHIR_BASE_URL}/Measure/{measure_id}/$evaluate-measure",
+        json=evaluation_measure,
+    )
+    logging.debug("Measure evaluated")
+    logging.debug(evaluation_measure_results)
+
+    num = evaluation_measure_results["group"][0]["population"][0]["count"]
+    if granularity == Granularity.COUNT:
+        return num
+    list_id = evaluation_measure_results["group"][0]["population"][0]["subjectResults"][
+        "reference"
+    ][5:]
+    params = {"_list": list_id, "_count": MAX_RESULTS}
+    fhir_entries = perform_fhir_api_request(
+        "GET", f"{FHIR_BASE_URL}/{CQL_QUERY_CONTEXT}", params=params
+    )
+    logging.debug(fhir_entries)
+    return fhir_entries
+
+
+def main():
+    query = create_cql_query(CQL_QUERY_CONTEXT, ["COMMERCIAL_USE"])
+    qry_result = perform_cql_query(query, CQL_QUERY_GRANULARITY)
+    num = (
+        qry_result
+        if CQL_QUERY_GRANULARITY == Granularity.COUNT
+        else len(qry_result["entry"])
+    )
+    logging.info(
+        f"Found {num} {CQL_QUERY_CONTEXT}(s) according to the correspondent parameters."
+    )
+    if CQL_QUERY_GRANULARITY == Granularity.RESOURCES:
+        logging.info("RESOURCES:")
+        logging.info(json.dumps(qry_result, indent=2, sort_keys=True))
+    else:
+        logging.info("No resources to show, as the granularity is COUNT")
+
+
+if __name__ == "__main__":
+    main()
