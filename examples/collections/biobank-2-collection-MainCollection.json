@@ -1,0 +1,105 @@
+{
+  "entry": [
+    {
+      "request": {
+        "method": "PUT",
+        "url": "Organization/biobank-2-collection-MainCollection"
+      },
+      "resource": {
+        "id": "biobank-2-collection-MainCollection",
+        "meta": {
+          "profile": [
+            "https://fhir.bbmri.de/StructureDefinition/Collection"
+          ]
+        },
+        "extension": [
+          {
+            "url": "https://fhir.bbmri.de/StructureDefinition/OrganizationDescription"
+          },
+          {
+            "url": "https://fhir.bbmri.de/StructureDefinition/CollectionType",
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "code": "RD",
+                  "display": "Rare disease colleciton",
+                  "system": "https://fhir.bbmri.de/CodeSystem/CollectionType"
+                }
+              ]
+            }
+          },
+          {
+            "url": "https://fhir.bbmri.de/StructureDefinition/DataCategory",
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "code": "BIOLOGICAL_SAMPLES",
+                  "display": "Biological Samples",
+                  "system": "https://fhir.bbmri.de/ValueSet/DataCategory"
+                }
+              ]
+            }
+          },
+          {
+            "url": "https://fhir.bbmri.de/StructureDefinition/DataCategory",
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "code": "OTHER",
+                  "display": "other",
+                  "system": "https://fhir.bbmri.de/ValueSet/DataCategory"
+                }
+              ]
+            }
+          }
+        ],
+        "contact": [
+          {
+            "name": {
+              "family": "Test",
+              "given": [
+                "Test"
+              ]
+            },
+            "purpose": {
+              "coding": [
+                {
+                  "code": "RESEARCH",
+                  "system": "http://terminology.hl7.org/CodeSystem/contactentity-type"
+                }
+              ]
+            },
+            "telecom": [
+              {
+                "system": "email",
+                "value": "biobank-2@test.com"
+              }
+            ]
+          }
+        ],
+        "identifier": [
+          {
+            "system": "http://www.bbmri-eric.eu/",
+            "value": "biobank-2:collection:MainCollection"
+          }
+        ],
+        "name": "Main Collection",
+        "partOf": {
+          "reference": "Organization/biobank-2"
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "code": "Collection"
+              }
+            ]
+          }
+        ],
+        "resourceType": "Organization"
+      }
+    }
+  ],
+  "type": "transaction",
+  "resourceType": "Bundle"
+}

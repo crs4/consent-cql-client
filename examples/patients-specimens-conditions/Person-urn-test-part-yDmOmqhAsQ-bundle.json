@@ -1,0 +1,278 @@
+{
+  "entry": [
+    {
+      "request": {
+        "method": "PUT",
+        "url": "Patient/urn-test-part-yDmOmqhAsQ"
+      },
+      "resource": {
+        "id": "urn-test-part-yDmOmqhAsQ",
+        "meta": {
+          "profile": [
+            "https://fhir.bbmri.de/StructureDefinition/Patient"
+          ]
+        },
+        "gender": "female",
+        "identifier": [
+          {
+            "value": "urn:test:part-yDmOmqhAsQ"
+          }
+        ],
+        "resourceType": "Patient"
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "url": "Condition/condition-urn-test-part-yDmOmqhAsQ"
+      },
+      "resource": {
+        "id": "condition-urn-test-part-yDmOmqhAsQ",
+        "meta": {
+          "profile": [
+            "https://fhir.bbmri.de/StructureDefinition/Condition"
+          ]
+        },
+        "code": {
+          "coding": [
+            {
+              "code": "Orphanet_227972",
+              "system": "http://www.orpha.net/ORDO/"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/urn-test-part-yDmOmqhAsQ"
+        },
+        "resourceType": "Condition"
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "url": "Specimen/urn-test-spec-NeEQueyiya"
+      },
+      "resource": {
+        "id": "urn-test-spec-NeEQueyiya",
+        "meta": {
+          "profile": [
+            "https://fhir.bbmri.de/StructureDefinition/Specimen"
+          ]
+        },
+        "extension": [
+          {
+            "url": "https://fhir.bbmri.de/StructureDefinition/Custodian",
+            "valueReference": {
+              "identifier": {
+                "system": "https://bbmri-eric.eu/",
+                "value": "biobank-1-collection-MainCollection"
+              }
+            }
+          },
+          {
+            "url": "https://fhir.bbmri.de/StructureDefinition/SampleDiagnosis",
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "code": "Orphanet_227972",
+                  "system": "http://www.orpha.net/ORDO/"
+                }
+              ]
+            }
+          }
+        ],
+        "collection": {
+          "bodySite": {
+            "coding": [
+              {
+                "code": "0000178",
+                "display": "blood",
+                "system": "http://purl.obolibrary.org/obo/uberon.owl"
+              }
+            ]
+          }
+        },
+        "identifier": [
+          {
+            "value": "urn:test:spec-NeEQueyiya"
+          }
+        ],
+        "subject": {
+          "reference": "Patient/urn-test-part-yDmOmqhAsQ"
+        },
+        "type": {
+          "coding": [
+            {
+              "code": "http://purl.obolibrary.org/obo/OBI_0001051",
+              "display": "DNA extract",
+              "system": "http://purl.obolibrary.org/obo/obib.owl"
+            },
+            {
+              "code": "dna",
+              "display": "DNA",
+              "system": "https://fhir.bbmri.de/CodeSystem/SampleMaterialType"
+            },
+            {
+              "code": "74412",
+              "display": "DNA",
+              "system": "http://purl.org/sig/ont/fma/"
+            }
+          ]
+        },
+        "resourceType": "Specimen"
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "url": "Specimen/urn-test-spec-AABJdynbLg"
+      },
+      "resource": {
+        "id": "urn-test-spec-AABJdynbLg",
+        "meta": {
+          "profile": [
+            "https://fhir.bbmri.de/StructureDefinition/Specimen"
+          ]
+        },
+        "extension": [
+          {
+            "url": "https://fhir.bbmri.de/StructureDefinition/Custodian",
+            "valueReference": {
+              "identifier": {
+                "system": "https://bbmri-eric.eu/",
+                "value": "biobank-1-collection-MainCollection"
+              }
+            }
+          },
+          {
+            "url": "https://fhir.bbmri.de/StructureDefinition/SampleDiagnosis",
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "code": "Orphanet_227972",
+                  "system": "http://www.orpha.net/ORDO/"
+                }
+              ]
+            }
+          }
+        ],
+        "collection": {
+          "bodySite": {
+            "coding": [
+              {
+                "code": "0000178",
+                "display": "blood",
+                "system": "http://purl.obolibrary.org/obo/uberon.owl"
+              }
+            ]
+          }
+        },
+        "identifier": [
+          {
+            "value": "urn:test:spec-AABJdynbLg"
+          }
+        ],
+        "subject": {
+          "reference": "Patient/urn-test-part-yDmOmqhAsQ"
+        },
+        "type": {
+          "coding": [
+            {
+              "code": "http://purl.obolibrary.org/obo/CL_0000001",
+              "display": "primary cultured cell",
+              "system": "http://purl.obolibrary.org/obo/cl.owl"
+            },
+            {
+              "code": "derivative-other",
+              "display": "Other Derivative",
+              "system": "https://fhir.bbmri.de/CodeSystem/SampleMaterialType"
+            },
+            {
+              "code": "70574",
+              "display": "Plasma cell",
+              "system": "http://purl.org/sig/ont/fma/"
+            }
+          ]
+        },
+        "resourceType": "Specimen"
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "url": "Specimen/urn-test-spec-CmtaTfIwEd"
+      },
+      "resource": {
+        "id": "urn-test-spec-CmtaTfIwEd",
+        "meta": {
+          "profile": [
+            "https://fhir.bbmri.de/StructureDefinition/Specimen"
+          ]
+        },
+        "extension": [
+          {
+            "url": "https://fhir.bbmri.de/StructureDefinition/Custodian",
+            "valueReference": {
+              "identifier": {
+                "system": "https://bbmri-eric.eu/",
+                "value": "biobank-1-collection-MainCollection"
+              }
+            }
+          },
+          {
+            "url": "https://fhir.bbmri.de/StructureDefinition/SampleDiagnosis",
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "code": "Orphanet_227972",
+                  "system": "http://www.orpha.net/ORDO/"
+                }
+              ]
+            }
+          }
+        ],
+        "collection": {
+          "bodySite": {
+            "coding": [
+              {
+                "code": "0000178",
+                "display": "blood",
+                "system": "http://purl.obolibrary.org/obo/uberon.owl"
+              }
+            ]
+          }
+        },
+        "identifier": [
+          {
+            "value": "urn:test:spec-CmtaTfIwEd"
+          }
+        ],
+        "subject": {
+          "reference": "Patient/urn-test-part-yDmOmqhAsQ"
+        },
+        "type": {
+          "coding": [
+            {
+              "code": "http://purl.obolibrary.org/obo/OBI_0100017",
+              "display": "blood serum specimen",
+              "system": "http://purl.obolibrary.org/obo/obib.owl"
+            },
+            {
+              "code": "blood-serum",
+              "display": "Blood Serum",
+              "system": "https://fhir.bbmri.de/CodeSystem/SampleMaterialType"
+            },
+            {
+              "code": "63083",
+              "display": "Portion of serum",
+              "system": "http://purl.org/sig/ont/fma/"
+            }
+          ]
+        },
+        "resourceType": "Specimen"
+      }
+    }
+  ],
+  "type": "transaction",
+  "resourceType": "Bundle"
+}

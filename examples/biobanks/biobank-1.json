@@ -1,0 +1,68 @@
+{
+  "entry": [
+    {
+      "request": {
+        "method": "PUT",
+        "url": "Organization/biobank-1"
+      },
+      "resource": {
+        "id": "biobank-1",
+        "meta": {
+          "profile": [
+            "https://fhir.bbmri.de/StructureDefinition/Biobank"
+          ]
+        },
+        "extension": [
+          {
+            "url": "https://fhir.bbmri.de/StructureDefinition/OrganizationDescription",
+            "valueString": "Test Biobank 1"
+          }
+        ],
+        "contact": [
+          {
+            "name": {},
+            "purpose": {
+              "coding": [
+                {
+                  "code": "RESEARCH",
+                  "system": "http://terminology.hl7.org/CodeSystem/contactentity-type"
+                }
+              ]
+            },
+            "telecom": [
+              {
+                "system": "email",
+                "value": "biobank1@test.com"
+              }
+            ]
+          }
+        ],
+        "identifier": [
+          {
+            "system": "http://www.bbmri-eric.eu/",
+            "value": "biobank-1"
+          }
+        ],
+        "name": "Test Biobank 1",
+        "telecom": [
+          {
+            "system": "url",
+            "value": "http://bb1.test.com"
+          }
+        ],
+        "type": [
+          {
+            "coding": [
+              {
+                "code": "Biobank"
+              }
+            ]
+          }
+        ],
+        "resourceType": "Organization"
+      }
+    }
+  ],
+  "type": "transaction",
+  "resourceType": "Bundle"
+}
