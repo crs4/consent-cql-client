@@ -51,7 +51,6 @@
           ]
         },
         "provision": {
-          "type": "deny",
           "class": [
             {
               "system": "http://hl7.org/fhir/resource-types",
