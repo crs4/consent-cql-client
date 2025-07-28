@@ -8,7 +8,7 @@
       },
       "resource": {
         "resourceType": "Consent",
-        "id": "consent-urn-test-part-zzymoVsbRJ",
+        "identifier": [{"value": "consent-urn-test-part-zzymoVsbRJ"}],
         "meta": {
           "profile": [
             "https://fhir.bbmri.de/StructureDefinition/Consent"
