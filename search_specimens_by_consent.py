@@ -21,7 +21,7 @@ class Granularity(Enum):
     COUNT = "COUNT"
 
 
-FHIR_BASE_URL = "http://localhost:8089/fhir"
+FHIR_BASE_URL = "http://localhost:8090/fhir"
 FHIR_SPECIMEN_RESOURCE_URL = f"{FHIR_BASE_URL}/Specimen"
 FHIR_PATIENT_RESOURCE_URL = f"{FHIR_BASE_URL}/Patient"
 FHIR_ORGANIZATION_RESOURCE_URL = f"{FHIR_BASE_URL}/Organization"
@@ -33,6 +33,7 @@ FHIR_MEASURE_EVALUATION_YEAR_START = "1900"
 FHIR_MEASURE_EVALUATION_YEAR_END = "2100"
 CQL_QUERY_CONTEXT = "Patient"  # This can be Specimen or  Patient
 CQL_QUERY_GRANULARITY = Granularity.RESOURCES  # it can be count or resources
+CCEs = ["RETURN_OF_RESULTS"]  # Common Condition Elements codes
 
 
 def encode(string):
@@ -180,7 +181,7 @@ def perform_cql_query(cql_query: str, granularity: Granularity):
 
 
 def main():
-    query = create_cql_query(CQL_QUERY_CONTEXT, ["COMMERCIAL_USE"])
+    query = create_cql_query(CQL_QUERY_CONTEXT, CCEs)
     qry_result = perform_cql_query(query, CQL_QUERY_GRANULARITY)
     num = (
         qry_result
