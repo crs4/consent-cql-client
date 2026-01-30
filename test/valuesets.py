@@ -71,3 +71,14 @@ DISEASES = [
     "C71.9",  # Malignant neoplasm of brain, unspecified
     "R53.83",  # Other fatigue
 ]
+
+CCEs = [
+    "REGULATORY_JURISDICTION",
+    "COMMERCIAL_USE",
+    "RETURN_OF_RESULTS",
+    "CONTACT_TO_PARTICIPATE",
+    "GENERATION_OF_BIOLOGICAL_PRODUCTS",
+    "RETURN_OF_INCIDENTAL_FINDINGS",
+    "DATA_LINKAGE",
+    "DATA_SAMPLE_POST_MORTEM_REUSE",
+]

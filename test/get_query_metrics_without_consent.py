@@ -207,6 +207,7 @@ def perform_cql_query(cql_query: str, granularity: Granularity):
 
 def main():
     query = create_cql_specimens_query()
+
     qry_result = perform_cql_query(query, CQL_QUERY_GRANULARITY)
     num = (
         qry_result
