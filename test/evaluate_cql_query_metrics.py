@@ -100,7 +100,8 @@ def create_cql_query(include_consent, cce_code, cce_choice, diagnosis_code, samp
         
     """
 
-    specimens_where_clause = f"""
+    specimens_search_function = f"""
+        define FilteredSpecimens:
         (exists(from Specimen.extension E where E.url = 'https://fhir.bbmri.de/StructureDefinition/SampleDiagnosis' and
                       (icd10.id in E.value.coding.system and '{diagnosis_code}' in E.value.coding.code))) and 
                       (exists from [Patient] P where (P.gender = '{patient_gender}')) and 
@@ -121,13 +122,15 @@ def create_cql_query(include_consent, cce_code, cce_choice, diagnosis_code, samp
     if include_consent:
         query += search_consents_function
         query += "context Specimen\n\n"
+        query+= specimens_search_function
         query += initial_population
+        query+= 'FilteredSpecimens and \n'
         query += consent_block
-        query += ' and '
-        query += specimens_where_clause
+
     else:
+        query += specimens_search_function
         query += initial_population
-        query += specimens_where_clause
+        query += 'FilteredSpecimens'
 
     return query
 
@@ -208,7 +211,7 @@ def perform_cql_query(cql_query: str, granularity: Granularity):
 
 
 def main():
-    query = create_cql_query(True, 'CONTACT_TO_PARTICIPATE', 'deny', 'G20','blood-serum', 'male')
+    query = create_cql_query(True, 'CONTACT_TO_PARTICIPATE', 'permit', 'G20','blood-serum', 'male')
     print(query)
     start = datetime.now()
     qry_result = perform_cql_query(query, CQL_QUERY_GRANULARITY)
