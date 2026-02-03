@@ -27,7 +27,9 @@ FHIR_PATIENT_RESOURCE_URL = f"{FHIR_BASE_URL}/Patient"
 FHIR_ORGANIZATION_RESOURCE_URL = f"{FHIR_BASE_URL}/Organization"
 FHIR_REQUEST_HEADER = {"Content-type": "application/fhir+json"}
 MAX_RESULTS = 11000
-FHIR_LIBRARY_VERSION = "0.1.1"
+FHIR_LIBRARY_VERSION = "0.1.2"
+FHIR_LIBRARY_WITH_CONSENT_URL = "http://bbmri.it/fhir/Library/CountSpecimensWithConsentLibraryNew1"
+FHIR_MEASURE_WITH_CONSENT_URL = "http://bbmri.it/fhir/Library/CountSpecimensWithConsentMeasure"
 FHIR_MEASURE_YEAR_VERSION = "0.1.1"
 FHIR_MEASURE_EVALUATION_YEAR_START = "1900"
 FHIR_MEASURE_EVALUATION_YEAR_END = "2100"
@@ -70,7 +72,7 @@ def perform_fhir_api_request(method, url, json=None, params=None):
         raise Exception(res.json())
     return res.json()
 
-def create_cql_query(include_consent, cce_code, cce_choice, diagnosis_code, sample_type, patient_gender):
+def create_cql_query(include_consent):
 
     query_header = f"""
     library ConsentSpecimenQuery version '1.0.0'
@@ -78,7 +80,15 @@ def create_cql_query(include_consent, cce_code, cce_choice, diagnosis_code, samp
     include FHIRHelpers version '4.0.0'
     codesystem SampleMaterialType:  'https://fhir.bbmri.de/CodeSystem/SampleMaterialType'
     codesystem icd10: 'http://hl7.org/fhir/sid/icd-10'
+    
+    parameter "CCEChoice" String
+    parameter "CCECode" String
+    parameter "DiagnosisCode" String
+    parameter "SampleType" String
+    parameter "PatientGender" String
+    
     define Patient:\n singleton from ([Patient])
+    
     context {'Unfiltered' if include_consent else 'Specimen'}
     
     """
@@ -91,8 +101,8 @@ def create_cql_query(include_consent, cce_code, cce_choice, diagnosis_code, samp
                 C.provision.provision Q
                 return flatten (
                     Q.data D 
-                    where Q.type = '{cce_choice}' and 
-                    Q.code.coding.code = '{cce_code}'
+                    where Q.type = "CCEChoice" and 
+                    Q.code.coding.code = "CCECode"
                     return Split(D.reference.reference, '/')[1]
                     )
                 )
@@ -103,9 +113,9 @@ def create_cql_query(include_consent, cce_code, cce_choice, diagnosis_code, samp
     specimens_search_function = f"""
         define FilteredSpecimens:
         (exists(from Specimen.extension E where E.url = 'https://fhir.bbmri.de/StructureDefinition/SampleDiagnosis' and
-                      (icd10.id in E.value.coding.system and '{diagnosis_code}' in E.value.coding.code))) and 
-                      (exists from [Patient] P where (P.gender = '{patient_gender}')) and 
-                      (exists(from [Specimen] S where S.type.coding contains Code '{sample_type}' from SampleMaterialType))
+                      (icd10.id in E.value.coding.system and "DiagnosisCode" in E.value.coding.code))) and 
+                      (exists from [Patient] P where (P.gender = "PatientGender")) and 
+                      (exists(from [Specimen] S where S.type.coding contains Code 'SampleType' from "SampleMaterialType"))
                       
     """
 
@@ -156,42 +166,52 @@ def create_measure(populations, url):
     )
 
 
-def create_evaluation_measure(report_type):
+def create_evaluation_measure(report_type,cce_choice,cce_code,diagnosis_code,sample_type, patient_gender):
     return EvaluationMeasure(
         period_start=FHIR_MEASURE_EVALUATION_YEAR_START,
         period_end=FHIR_MEASURE_EVALUATION_YEAR_END,
         report_type=report_type,
+        cce_choice=cce_choice,
+        cce_code=cce_code,
+        diagnosis_code=diagnosis_code,
+        sample_type=sample_type,
+        patient_gender=patient_gender
     )
 
 
-def perform_cql_query(cql_query: str, granularity: Granularity):
-    logging.debug(cql_query)
+def post_library(cql_query, library_url):
     base64_cql = encode(cql_query)
     logging.debug("Creating Library")
-    library_url = generate_uuid()
     library = create_library(base64_cql, library_url)
     logging.debug("POST Library")
-    l = perform_fhir_api_request("POST", f"{FHIR_BASE_URL}/Library", library)
-    logging.debug("Library created")
+    #if the library with the same url exists, it is not recreated
+    library = perform_fhir_api_request("POST", f"{FHIR_BASE_URL}/Library?{library_url}", library)
+    return library['id']
+
+
+def post_measure(library_url, measure_url):
     populations = [
         Population(expression="InInitialPopulation", code="initial-population")
     ]
     measure = create_measure(populations, library_url)
     logging.debug("Creating Measure")
     logging.debug(measure.get_resource())
+    #if the measure with the same url exists, it is not recreated
     created_measure = perform_fhir_api_request(
-        "POST", f"{FHIR_BASE_URL}/Measure", measure
+        "POST", f"{FHIR_BASE_URL}/Measure?{measure_url}", measure
     )
-    logging.debug("Measure created")
-    measure_id = created_measure["id"]
+    return created_measure['id']
+
+
+def evaluate_measure(measure_id, granularity, cce_choice, cce_code, diagnosis_code, sample_type, patient_gender):
     report_type = EvaluationMeasure.SUBJECT_LIST
-    evaluation_measure = create_evaluation_measure(report_type)
+    evaluation_measure = create_evaluation_measure(report_type,cce_choice,cce_code,diagnosis_code,sample_type, patient_gender)
     logging.debug("Evaluating Measure")
     logging.debug(evaluation_measure.get_resource())
     evaluation_measure_results = perform_fhir_api_request(
         "POST",
         f"{FHIR_BASE_URL}/Measure/{measure_id}/$evaluate-measure",
-        json=evaluation_measure,
+        json=evaluation_measure
     )
     logging.debug("Measure evaluated")
     logging.debug(evaluation_measure_results)
@@ -211,10 +231,39 @@ def perform_cql_query(cql_query: str, granularity: Granularity):
 
 
 def main():
-    query = create_cql_query(True, 'CONTACT_TO_PARTICIPATE', 'permit', 'G20','blood-serum', 'male')
-    print(query)
+    cql_query = create_cql_query(True)
+    logging.debug(cql_query)
+    #get library
+    # Check if library exists
+    res = requests.get(f"{FHIR_BASE_URL}/Library", params={"url": FHIR_LIBRARY_WITH_CONSENT_URL})
+    if res.json().get("total", 0) > 0:
+        library_id = res.json()["entry"][0]["resource"]["id"]
+        logging.info(f'Library already present with id {library_id}')
+    else:
+        # create new library
+        library_id = post_library(cql_query, FHIR_LIBRARY_WITH_CONSENT_URL)
+        logging.info(f'Created Library with id {library_id}')
+
+    library_id = 'DHBEGDYNCGZKKBOY'
+    measure_id = 'DHBEGGZTOTAHCV4I'
+
+    # Check if a measure already exists for the library
+    # url = f"{FHIR_BASE_URL}/Measure?url={FHIR_LIBRARY_WITH_CONSENT_URL}"
+    # res = requests.get(f"{FHIR_BASE_URL}/Measure?library={FHIR_LIBRARY_WITH_CONSENT_URL}")
+    # res_json = res.json()
+    # measure_entries = res.json().get("entry", [])
+    #
+    # if measure_entries:
+    #     measure_id = measure_entries[0]["resource"]["id"]
+    #     logging.info(f'Measure already present with id {measure_id}')
+    #
+    # else:
+    #     measure_id = post_measure(FHIR_LIBRARY_WITH_CONSENT_URL,FHIR_MEASURE_WITH_CONSENT_URL)
+    #     logging.info(f'Created Measure with id {measure_id}')
+
+
     start = datetime.now()
-    qry_result = perform_cql_query(query, CQL_QUERY_GRANULARITY)
+    qry_result = evaluate_measure(measure_id,Granularity.COUNT,'CONTACT_TO_PARTICIPATE', 'permit', 'G20','blood-serum', 'male')
     num = (
         qry_result
         if CQL_QUERY_GRANULARITY == Granularity.COUNT

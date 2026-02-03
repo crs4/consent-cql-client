@@ -141,7 +141,7 @@ class ExampleSource(AbstractSource):
             birth_date=self._get_random_birth_date(1925, 2010),
         )
         samples = []
-        for i in range(1, random.choice([2, 3, 4, 5, 6])):
+        for i in range(1, random.choice([3, 4, 5, 6])):
             sample_id = f"Sample-{donor_id}-{i}"
             sampling_event = SamplingEvent(
                 id=f"SE-{sample_id}",
@@ -183,7 +183,7 @@ class ExampleSource(AbstractSource):
 
     def get_cases_data(self) -> Iterable[Case]:
         cases = []
-        for i in range(0, 50000):
+        for i in range(0, 100000):
             logging.debug(f'Generating case:{i}')
             case = self._generate_case(i)
             cases.append(case)
