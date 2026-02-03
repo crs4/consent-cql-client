@@ -38,6 +38,9 @@ from bbmri_fp_etl.sources import AbstractSource
 from test.consent import create_specimens_provision, create_consent_resource
 from test.valuesets import DISEASES, SAMPLE_TYPES, CCEs
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format="%(levelname)s:%(message)s")
 
 class ExampleSource(AbstractSource):
     def __init__(self):
@@ -166,7 +169,7 @@ class ExampleSource(AbstractSource):
         sample_provisions = []
         for cce in self.select_random_cces_block():
             sample_consent_provision = create_specimens_provision(
-                "permit", [s.id for s in samples], cce, "2025-01-24T00:00:00Z"
+                random.choice(["permit",'deny']), [s.id for s in samples], cce, "2025-01-24T00:00:00Z"
             )
             sample_provisions.append(sample_consent_provision)
         create_consent_resource(
@@ -180,7 +183,8 @@ class ExampleSource(AbstractSource):
 
     def get_cases_data(self) -> Iterable[Case]:
         cases = []
-        for i in range(0, 4):
+        for i in range(0, 50000):
+            logging.debug(f'Generating case:{i}')
             case = self._generate_case(i)
             cases.append(case)
         return cases
