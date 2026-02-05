@@ -1,5 +1,6 @@
 import base64
 import json
+import random
 import secrets
 import uuid
 import requests
@@ -12,6 +13,8 @@ from enum import Enum
 
 
 import logging
+
+from test.valuesets import DISEASES, SAMPLE_TYPES
 
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s:%(message)s")
 
@@ -103,7 +106,7 @@ def create_cql_query(include_consent, cce_code, cce_choice, diagnosis_code, samp
     specimens_search_function = f"""
         define FilteredSpecimens:
         (exists(from Specimen.extension E where E.url = 'https://fhir.bbmri.de/StructureDefinition/SampleDiagnosis' and
-                      (icd10.id in E.value.coding.system and '{diagnosis_code}' in E.value.coding.code))) and 
+                      ('http://hl7.org/fhir/sid/icd-10' in E.value.coding.system and '{diagnosis_code}' in E.value.coding.code))) and 
                       (exists from [Patient] P where (P.gender = '{patient_gender}')) and 
                       (exists(from [Specimen] S where S.type.coding contains Code '{sample_type}' from SampleMaterialType))
                       
@@ -210,27 +213,40 @@ def perform_cql_query(cql_query: str, granularity: Granularity):
     return fhir_entries
 
 
-def main():
-    query = create_cql_query(True, 'CONTACT_TO_PARTICIPATE', 'permit', 'G20','blood-serum', 'male')
-    print(query)
-    start = datetime.now()
-    qry_result = perform_cql_query(query, CQL_QUERY_GRANULARITY)
-    num = (
-        qry_result
-        if CQL_QUERY_GRANULARITY == Granularity.COUNT
-        else len(qry_result["entry"])
-    )
-    logging.info(
-        f"Found {num} Specimen(s) according to the correspondent parameters."
-    )
-    if CQL_QUERY_GRANULARITY == Granularity.RESOURCES:
-        logging.info("RESOURCES:")
-        logging.info(json.dumps(qry_result, indent=2, sort_keys=True))
-    else:
-        logging.info("No resources to show, as the granularity is COUNT")
-    end = datetime.now()
-    logging.info(f'Overall execution time: {(end - start).seconds} seconds')
+def main(include_consent, number_of_iterations):
+    spec_cons = 'spec_cons'
+    spec_only = 'spec_only'
+    report_name = f'./Evaluation_report_{number_of_iterations}_iterations_{spec_cons if include_consent else spec_only}.csv'
+    f = open(report_name, 'w')
+    f.write('iteration;number_of_retrieved_samples;execution_time\n')
+    for i in range(0, number_of_iterations):
+        cce_code = random.choice(CCEs)
+        cce_choice = random.choice(['permit', 'deny'])
+        diagnosis_code = random.choice(DISEASES)
+        sample_type = random.choice(['dna', 'whole-blood', 'urine', 'blood-serum', 'tissue-other', 'saliva', 'blood-plasma'])
+        patient_gender = random.choice(["male", "female"])
+        query = create_cql_query(include_consent, cce_code, cce_choice, diagnosis_code,sample_type, patient_gender)
+        start = datetime.now()
+        qry_result = perform_cql_query(query, CQL_QUERY_GRANULARITY)
+        num = (
+            qry_result
+            if CQL_QUERY_GRANULARITY == Granularity.COUNT
+            else len(qry_result["entry"])
+        )
+        logging.info(
+            f"Found {num} Specimen(s) according to the correspondent parameters."
+        )
+        if CQL_QUERY_GRANULARITY == Granularity.RESOURCES:
+            logging.info("RESOURCES:")
+            logging.info(json.dumps(qry_result, indent=2, sort_keys=True))
+        else:
+            logging.info("No resources to show, as the granularity is COUNT")
+        end = datetime.now()
+        execution_time = (end - start).seconds
+        f.write(f"{i};{num};{execution_time}\n")
+        logging.info(f'Overall execution time: {execution_time} seconds')
+    f.close()
 
 
 if __name__ == "__main__":
-    main()
+    main(True, 10)

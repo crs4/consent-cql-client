@@ -30,7 +30,7 @@ def create_specimens_provision(provision_type, specimen_ids, cce_code, timestamp
             }
 
 
-def create_consent_resource(consent_id, patient_id, collection_id, main_provision_timestamp,specimen_provisions):
+def create_consent_resource(consent_id, patient_id, biobank_id, main_provision_timestamp,specimen_provisions):
     consent_template = {
       "entry": [
         {
@@ -73,7 +73,7 @@ def create_consent_resource(consent_id, patient_id, collection_id, main_provisio
               "reference": f'Patient/{patient_id}'
             },
             "organization":[ {
-              "reference": f'Organization/{collection_id}'
+              "reference": f'Organization/{biobank_id}'
             }],
             "dateTime": "2025-04-24T00:00:00Z",
             "policyRule": {
@@ -105,11 +105,3 @@ def create_consent_resource(consent_id, patient_id, collection_id, main_provisio
     f = open(f'./fhir_consents_output/consent_patient_{patient_id}.json', 'w')
     json.dump(consent_template, f, indent=2)
 
-
-def main():
-  p = create_specimens_provision('permit', ['Sample-0-1', 'Sample-0-2'], "RETURN_OF_RESULTS", "2025-04-24T00:00:00Z")
-  create_consent_resource('consent-0', '0', 'test-biobank-1-collection-1', "2025-04-24T00:00:00Z", [p])
-
-
-if __name__ == "__main__":
-  main()
