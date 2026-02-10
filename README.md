@@ -94,7 +94,7 @@ The querying was done randomly choosing between the 50 diseases, 2 genders, 7 ou
 |      Query               |     mean  |   std    |   50%    |    95%   |    99%   |  
 |--------------------------|-----------|----------|----------|----------|----------|
 | Query with Consent       | 2.162801  | 0.046890 | 2.156344 | 2.225988 | 2.343235 | 
-| Query without Consent    | 2.167500  | 054135   | 2.159460 | 2.228008 | 2.290985 | 
+| Query without Consent    | 2.167500  | 0.054135   | 2.159460 | 2.228008 | 2.290985 | 
 
 These results suggest the two queries perform essentially the same, with only a small difference in the extreme tail. At 2.16 seconds per request, the mean difference 4.7ms and the median difference 3.1ms are negligible and within normal run-to-run noise. 
 
