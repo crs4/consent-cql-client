@@ -107,7 +107,9 @@ With respect to tail latency (95%, 99%) the only noticeable difference is that t
 There is a strong visual similarity between the two graphs. In the left-hand graph, the boxes representing the interquartile ranges are nearly aligned, and the median lines (the horizontal bars inside the boxes) are almost perfectly level. The blue box ("without Consent") is slightly taller than the orange one ("with Consent") and the tails extends further out, denoting a noisier and less predictable query. In the right-hand graph, the two density curves (blue area vs. orange dashed line) are nearly coincident, with peaks at the same X-value (~2.15 s) and similar widths. Both curves drop to near zero quickly, but there are tiny "bumps" far to the right. In particular, the "with Consent" query has some visible probability ripples in the 2.4s-2.6s range, which pushes its P99 up to 2.34s.
 
 ## Acknowledgments
-This work has been partially funded by the following sources: 
+This work is part of the BBMRI.it Pilot run by BBMRI.it, CRS4, UniMIB, IEOMI-CNR, UniBo. An article with more details about the work is being drafted.
+
+With respect to CRS4, the work described herein has been partially funded by the following sources: 
 
  - the “Total Patient Management” (ToPMa) project (grant by the Sardinian Regional Authority, grant number RC_CRP_077). Intervento finanziato con risorse FSC 2014-2020 - Patto per lo Sviluppo della Regione Sardegna;
  - the “Processing, Analysis, Exploration, and Sharing of Big and/or Complex Data” (XDATA) project (grant by the Sardinian Regional Authority).
